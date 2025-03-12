@@ -1,0 +1,48 @@
+version: "3.9"
+services:
+  xserver:
+    image: devrt/xserver
+    ipc: host
+    security_opt:
+    - seccomp:unconfined
+    ports:
+    - "3000:80"
+    environment:
+      - DISPLAY=:0
+    volumes:
+      - x11socket:/tmp/.X11-unix
+    healthcheck:
+      test: ["CMD-SHELL", "test -e /tmp/.X11-unix/X0"]
+      interval: "1s"
+      retries: 20
+  # This is your local ROS slave container
+  workspace:
+    image: devrt/ros-devcontainer-vscode:noetic-desktop
+    # Using host network (simplest way for ROS multi-machine communication)
+    network_mode: "host"
+    # For GUI/graphics rendering etc.
+    ipc: host
+    security_opt:
+      - seccomp:unconfined
+    # Specify remote Master address and local IP in environment
+    environment:
+      - DISPLAY=:0
+      - ROS_MASTER_URI=http://192.168.149.1:11311
+      - ROS_IP=192.168.149.237
+      - UID=${UID}  # Assuming UID is defined in .env or shell
+      - GID=${GID}  # Same as above
+  
+    # Mount local workspace source code into container
+    volumes:
+      - ./entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
+      - ./src:/workspace/src:rw
+      - x11socket:/tmp/.X11-unix
+    volumes_from:
+      - xserver
+    depends_on:
+      - xserver
+    entrypoint: ["/usr/local/bin/entrypoint.sh"]
+    command: ["sudo", "-E", "/usr/local/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+volumes:
+  x11socket:
+
