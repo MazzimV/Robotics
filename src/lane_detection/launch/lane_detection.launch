@@ -2,5 +2,7 @@
 
     <node pkg="lane_detection" name="lane_detection" type="lane_detection.py" output="screen">   
     </node>
+    <node pkg="laser_scan_navigator" name="laser_scan_navigator" type="laser_scan_navigator.py" output="screen">   
+    </node>
     
 </launch>
