@@ -1,5 +1,12 @@
 version: "3.9"
 services:
+  ntpserver:
+    image: cturra/ntp
+    restart: always
+    ports:
+      - "123:123/udp"
+    networks:
+      - my_net
   xserver:
     image: devrt/xserver
     ipc: host
@@ -28,7 +35,7 @@ services:
     environment:
       - DISPLAY=:0
       - ROS_MASTER_URI=http://192.168.149.1:11311
-      - ROS_IP=192.168.149.237
+      - ROS_IP=192.168.149.68
       - UID=${UID}  # Assuming UID is defined in .env or shell
       - GID=${GID}  # Same as above
   
@@ -45,4 +52,9 @@ services:
     command: ["sudo", "-E", "/usr/local/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
 volumes:
   x11socket:
+
+networks:
+  my_net:
+    driver: bridge
+
 
