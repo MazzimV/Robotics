@@ -1,0 +1,6 @@
+<launch>
+
+<node pkg="lidar_loop" name="lidar_loop" type="lidar_loop.py" output="screen">   
+</node>
+
+</launch>

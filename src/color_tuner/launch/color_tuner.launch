@@ -1,0 +1,6 @@
+<launch>
+
+<node pkg="color_tuner" name="color_tuner" type="color_tuner.py" output="screen">   
+</node>
+
+</launch>
