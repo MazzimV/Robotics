@@ -4,31 +4,58 @@ from cv_bridge import CvBridge
 import cv2
 import numpy as np
 from geometry_msgs.msg import Twist
+from std_msgs.msg import Bool
 
 class LaneDetection:
     def __init__(self):
         self.bridge = CvBridge()
         # Subscribe to camera feed
-        self.image_sub = rospy.Subscriber('/robot_1/depth_cam/rgb/image_raw', Image, self.image_callback)
+        self.image_sub = rospy.Subscriber('/robot_1/depth_cam/rgb/image_raw/compressed', Image, self.lane_callback)
         # Publisher for robot movement commands
-        self.cmd_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
+        self.cmd_pub = rospy.Publisher('/turn', Bool, queue_size=1)
 
-        # Coefficients for the PID controller
-        self.kp = 0.005
-        self.ki = 0.0001
-        self.kd = 0.001
+    def lane_callback(self, msg):
+        """
+        Detect if a lane is ending or if there's an intersection.
+        
+        Args:
+            processed_data: Dictionary with processed image data
+            debug_image: Image for visualization
+            
+        Returns:
+            True if lane is ending, False otherwise
+        """
+        # Check for horizontal lines that indicate intersections
+        horizontal_lines = cv2.HoughLinesP(
+            processed_data['look_ahead_yellow_mask'], 
+            1, np.pi/180, 50, 
+            minLineLength=30, 
+            maxLineGap=10
+        )
 
-        # Variables used to keep track of cumulative sums required for PID control
-        self.prev_error = 0
-        self.integral = 0
-        self.prev_time = rospy.Time.now().to_sec()
+        horizontal_line_detected = False
+        if horizontal_lines is not None:
+            for line in horizontal_lines:
+                x1, y1, x2, y2 = line[0]
+                # If line is mostly horizontal (small y difference)
+                if abs(y2 - y1) < 5 and abs(x2 - x1) > 10:
+                    horizontal_line_detected = True
+                    # Draw the detected horizontal line
+                    cv2.line(
+                        debug_image, 
+                        (x1 + processed_data['look_ahead_left'], y1 + processed_data['look_ahead_top']), 
+                        (x2 + processed_data['look_ahead_left'], y2 + processed_data['look_ahead_top']), 
+                        (0, 255, 255), 2
+                    )
+        
+        return horizontal_line_detected
 
     def detect_yellow_lanes(self, image):
         # Convert to HSV color space for better color segmentation
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         
         # Define yellow color range in HSV
-        lower_yellow = np.array([10, 40, 100])
+        lower_yellow = np.array([10, 70, 100])
         upper_yellow = np.array([35, 255, 255])
         
         # Create mask for yellow

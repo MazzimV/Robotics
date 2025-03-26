@@ -11,7 +11,7 @@ class StateMachine:
         
         # Parameters
         self.forward_speed = 0.2
-        self.turn_speed = 0.7
+        self.turn_speed = 0.6
 
         self.state = 'S'
         self.prev_state = "None"
@@ -54,7 +54,7 @@ class StateMachine:
     def pedestrian_callback(self, msg):
         if msg.data:
             self.pedestrian_detected = True
-            rospy.loginfo("Pedestrian lane detected")
+            # rospy.loginfo("Pedestrian lane detected")
         else:
             self.pedestrian_detected = False
 
@@ -89,6 +89,7 @@ class StateMachine:
             cmd.linear.x = self.forward_speed
             cmd.angular.z = -self.turn_speed
         self.cmd_vel_pub.publish(cmd)
+        rospy.loginfo(cmd)
         self.last_cmd = cmd
 
     def find_action(self, state, prev_state, next_state):
