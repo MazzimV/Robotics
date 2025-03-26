@@ -20,7 +20,7 @@ class PedestrianDetection:
         # Publishers and subscribers
         self.pedestrian_pub = rospy.Publisher('/pedestrian', Bool, queue_size=1)
         self.debug_image_pub = rospy.Publisher('/pedestrian_lane_debug', Image, queue_size=1)
-        rospy.Subscriber('/robot_1/depth_cam/rgb/image_raw/compressed', Image, self.image_callback)
+        rospy.Subscriber('/robot_1/depth_cam/rgb/image_raw', Image, self.image_callback)
         
         rospy.loginfo("Pedestrian lane detector initialized")
     
@@ -28,7 +28,7 @@ class PedestrianDetection:
         """Process camera image for pedestrian lane detection"""
         try:
             # Convert ROS image to OpenCV format
-            cv_image = self.bridge.compressed_imgmsg_to_cv2(data, "bgr8")
+            cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
             
             # Process image for pedestrian lane detection
             pedestrian_detection, debug_image = self.detect_pedestrian_lane(cv_image)
