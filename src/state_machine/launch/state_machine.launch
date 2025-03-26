@@ -1,0 +1,6 @@
+<launch>
+
+<node pkg="state_machine" name="state_machine" type="state_machine.py" output="screen">   
+</node>
+
+</launch>

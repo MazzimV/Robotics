@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+  <node pkg="pedestrian_detection" type="pedestrian_detection.py" name="pedestrian_detection" output="screen">
+  </node>  
+  <node pkg="rqt_image_view" type="rqt_image_view" name="image_view" args="/lane_debug" />
+</launch>
