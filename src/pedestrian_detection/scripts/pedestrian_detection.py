@@ -59,56 +59,56 @@ class PedestrianDetection:
             height, width, _ = image.shape
             
             # Define region of interest
-            lroi_top = int(height * 0.8)
-            lroi_bottom = int(height)
-            lroi_width = int(width * 0.15)
-            lroi_left = 0
-            lroi_right = int(lroi_left + lroi_width)
+            roi_top = int(height * 0.25)
+            roi_bottom = int(height)
+            roi_width = int(width)
+            roi_left = int(0)
+            roi_right = int(roi_left + roi_width)
 
             # Extract ROI
-            lroi = image[lroi_top:lroi_bottom, lroi_left:lroi_right]
+            roi = image[roi_top:roi_bottom, roi_left:roi_right]
 
             # Draw ROI on debug image
-            cv2.rectangle(debug_image, (lroi_left, lroi_top), (lroi_right, lroi_bottom), (0, 255, 0), 2)
+            cv2.rectangle(debug_image, (roi_left, roi_top), (roi_right, roi_bottom), (0, 255, 0), 2)
             
             # Convert to HSV for better color detection
-            lhsv = cv2.cvtColor(lroi, cv2.COLOR_BGR2HSV)
+            hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
 
             # Create mask for pedestrian lane markers
-            l_white_mask = cv2.inRange(lhsv, self.white_min, self.white_max)
+            white_mask = cv2.inRange(hsv, self.white_min, self.white_max)
 
             # Add text for the detected yellow pixels count
-            l_white_pixel_count = np.sum(l_white_mask > 0)
-            cv2.putText(debug_image, f"White pixels: {l_white_pixel_count}", 
+            white_pixel_count = np.sum(white_mask > 0)
+            cv2.putText(debug_image, f"White pixels: {white_pixel_count}", 
                       (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-            if l_white_pixel_count < 600:
+            if white_pixel_count < 10000:
                 return False, debug_image
             
             # Apply morphological operations to clean up the mask
             kernel = np.ones((5, 5), np.uint8)
-            l_white_mask = cv2.morphologyEx(l_white_mask, cv2.MORPH_OPEN, kernel)
-            l_white_mask = cv2.morphologyEx(l_white_mask, cv2.MORPH_CLOSE, kernel)
+            white_mask = cv2.morphologyEx(white_mask, cv2.MORPH_OPEN, kernel)
+            white_mask = cv2.morphologyEx(white_mask, cv2.MORPH_CLOSE, kernel)
             
             # Find contours
-            l_contours, _ = cv2.findContours(l_white_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours, _ = cv2.findContours(white_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             
             # Draw contours on debug image
-            l_contour_image = np.zeros_like(lroi)
-            cv2.drawContours(l_contour_image, l_contours, -1, (255, 255, 255), 2)
-            debug_image[lroi_top:lroi_bottom, lroi_left:lroi_right] = cv2.addWeighted(
-                lroi, 0.7, l_contour_image, 0.3, 0)
+            contour_image = np.zeros_like(roi)
+            cv2.drawContours(contour_image, contours, -1, (255, 255, 255), 2)
+            debug_image[roi_top:roi_bottom, roi_left:roi_right] = cv2.addWeighted(
+                roi, 0.7, contour_image, 0.3, 0)
             
             # If no contours found, return False
-            if not l_contours:
+            if not contours:
                 cv2.putText(debug_image, "No pedestrian lane markers detected", 
                           (width//2 - 150, height//2), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
                 return False, debug_image
             
             # Filter small contours
-            l_contours = [c for c in l_contours if cv2.contourArea(c) > 100]
+            contours = [c for c in contours if cv2.contourArea(c) > 100]
             
             # If no significant contours found, return False
-            if not l_contours:
+            if not contours:
                 cv2.putText(debug_image, "No significant pedestrian lane markers", 
                           (width//2 - 150, height//2), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
                 return False, debug_image
