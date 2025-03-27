@@ -16,12 +16,9 @@ from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import Twist
 import ros_numpy
 from sensor_msgs.msg import PointCloud2
+from std_msgs.msg import Bool
 
-ROI = 10
-
-# 25 cm
 LASER_DIST_THRESHOLD = 0.40 
-
 DEPTH_DIST_THRESHOLD = 0.50 
 
 class obj_dist_est():
@@ -39,36 +36,25 @@ class obj_dist_est():
         
         rospy.Subscriber('/robot_1/scan_raw', LaserScan, self.laser_callback)
         rospy.Subscriber('/robot_1/depth_cam/depth/points', PointCloud2, self.depth_callback)
+        self.pub = rospy.Publisher('/object_detected', Bool, queue_size=1)
+        rospy.Timer(rospy.Duration(0.1), self.publish)
 
-
-    def stop_robot(self):
-        twist = Twist()
-        twist.linear.x = 0.0
-        twist.angular.z = 0.0
-        self.vel_pub.publish(twist)
-
-    def move_robot(self):
-        twist = Twist()
-        twist.linear.x = 0.2
-        twist.angular.z = 0.0
-        self.vel_pub.publish(twist)
-
-    def check_fusion(self):
-        rospy.loginfo(f"fusion {self.laser_det} {self.depth_det}")
+    def publish(self, event):
+        obj_detected = Bool()
         if self.laser_det or self.depth_det:
-            self.det = True
-            self.stop_robot()
-            return
-        self.det = False
-        self.move_robot()
+            obj_detected.data = True
+            self.pub.publish(obj_detected)
+        else:
+            obj_detected.data = False
+            self.pub.publish(obj_detected)
     
     def depth_callback(self, msg):
-        pc_array = ros_numpy.point_cloud2.pointcloud2_to_array(msg)
+        points_arr = ros_numpy.point_cloud2.pointcloud2_to_array(msg)
     
-        points = np.zeros((pc_array.shape[0], 3), dtype=np.float32)
-        points[:, 0] = pc_array['x']
-        points[:, 1] = pc_array['y']
-        points[:, 2] = pc_array['z']
+        points = np.zeros((points_arr.shape[0], 3), dtype=np.float32)
+        points[:, 0] = points_arr['x']
+        points[:, 1] = points_arr['y']
+        points[:, 2] = points_arr['z']
         
         valid = np.isfinite(points).all(axis=1)
         points = points[valid]
@@ -78,8 +64,6 @@ class obj_dist_est():
 
         distances = np.linalg.norm(points, axis=1)
         min_dist = np.min(distances)
-        rospy.loginfo("DEPTH dist: {:.2f} m", min_dist)
-        # self.check_fusion()
 
     def laser_callback(self, msg):
         ranges = msg.ranges
@@ -88,7 +72,7 @@ class obj_dist_est():
 
         min_dist = float('inf')
 
-        for i in range(0, 30): 
+        for i in range(0, 10): 
             min_dist = min(ranges[360 - i - 1], min_dist)
             min_dist = min(ranges[i], min_dist)
 
@@ -96,11 +80,6 @@ class obj_dist_est():
             self.laser_det = True
         else:
             self.laser_det = False
-
-        rospy.loginfo("LIDAR DIST: %.2f m", min_dist)
-        # self.check_fusion()
-
-       
 
 if __name__ == '__main__':
 
@@ -110,7 +89,3 @@ if __name__ == '__main__':
         rospy.spin()
     except KeyboardInterrupt:
         print ("shutting down")
-        twist = Twist()
-        twist.linear.x = 0.0
-        twist.angular.z = 0.0
-        proc.vel_pub.publish(twist)
