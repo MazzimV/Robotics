@@ -11,7 +11,7 @@ class StateMachine:
         
         # Parameters
         self.forward_speed = 0.2
-        self.turn_speed = 0.7
+        self.turn_speed = 0.6
 
         self.state = 'S'
         self.prev_state = "None"
@@ -26,12 +26,15 @@ class StateMachine:
         self.pedestrian_state_start_time = None
 
         self.turn_time = 2
+        self.turn_ahead = False
+        self.turn_state_start_time = None
 
         # Create publisher
         self.cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
 
         # Start subscribers
         rospy.Subscriber('/pedestrian', Bool, self.pedestrian_callback)
+        rospy.Subscriber('/turn', Bool, self.turn_callback)
 
         self.state_dict = {
             "S": {
@@ -54,9 +57,15 @@ class StateMachine:
     def pedestrian_callback(self, msg):
         if msg.data:
             self.pedestrian_detected = True
-            rospy.loginfo("Pedestrian lane detected")
+            # rospy.loginfo("Pedestrian lane detected")
         else:
             self.pedestrian_detected = False
+
+    def turn_callback(self, msg):
+        if msg.data:
+            self.turn_ahead = True
+        else:
+            self.turn_ahead = False
 
     def update_state(self):
         self.action.extend(self.find_action(self.state, self.prev_state, self.next_state).split(','))
@@ -83,12 +92,22 @@ class StateMachine:
                 self.action.pop(0)
 
         elif self.action[0] == "SLIGHT_RIGHT":
-            cmd.linear.x = self.forward_speed
-            cmd.angular.z = -self.turn_speed
+            if not self.turn_ahead:
+                cmd = self.last_cmd
+            else:
+                cmd.linear.x = self.forward_speed
+                cmd.angular.z = -self.turn_speed
+                self.cmd_vel_pub.publish(cmd)
+                self.turn_state_start_time = time.time()
+            if self.turn_state_start_time is not None and current_time - self.turn_state_start_time > self.turn_time:
+                self.turn_state_start_time = None
+                self.action.pop(0)
+
         elif self.state == 'TURN_RIGHT':
             cmd.linear.x = self.forward_speed
             cmd.angular.z = -self.turn_speed
         self.cmd_vel_pub.publish(cmd)
+        # rospy.loginfo(cmd)
         self.last_cmd = cmd
 
     def find_action(self, state, prev_state, next_state):
