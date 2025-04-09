@@ -78,25 +78,52 @@ class sign_detection():
         except Exception as e:
             rospy.loginfo(e)
 
-    
-    # def process_signs(self, detected_signs):
-    #     cmd = Twist() 
-    #     if "Stop" in detected_signs:
-    #         rospy.loginfo("STOP sign detected! Stopping the robot.")
-    #         cmd.linear.x = 0.0
-    #         cmd.angular.z = 0.0  
+    detected_signs = ["red_light", "green_light", "yellow_light", "stop", "five", "no_left", "no_limit", "no_right", "park", "right"]
 
-    #     elif "SPEED LIMIT 50" in detected_signs:
-    #         rospy.loginfo("Speed Limit 50 detected! Slowing down.")
-    #         cmd.linear.x = 0.5  # Slow speed
+    def process_signs(self, detected_signs):
+        cmd = Twist()  
 
-    #     elif "NO ENTRY" in detected_signs:
-    #         rospy.loginfo("No Entry sign detected! Stopping immediately.")
-    #         cmd.linear.x = 0.0  # Stop robot
+        if "red_light" in detected_signs or "yellow_light" in detected_signs:
+            rospy.loginfo("red_light or yellow_light sign detected! Stopping the robot.")
+            cmd.linear.x = 0.0
+            cmd.angular.z = 0.0  
 
-    #     else:
-    #         rospy.loginfo("No special sign detected, continuing at normal speed.")
-    #         cmd.linear.x = 1.0  # Default speed
+        elif "green_light" in detected_signs:
+            rospy.loginfo("green_light detected! Advance.")
+            cmd.linear.x = 0.3  
+
+        elif "stop" in detected_signs:
+            rospy.loginfo("Stop sign detected! Stopping for 3 seconds.")
+            cmd.linear.x = 0.0
+            self.cmd_pub.publish(cmd)     
+            rospy.sleep(3)  
+            rospy.loginfo("Resuming movement after stop sign.")
+            cmd.linear.x = 0.3  
+
+        elif "five" in detected_signs:
+            rospy.loginfo("Five sign detected! Slowing.")
+            cmd.linear.x = 0.1  
+
+        elif "no_limit" in detected_signs:
+            rospy.loginfo("No limit sign detected! Accelerating.")
+            cmd.linear.x = 0.3  
+
+        elif "no_left" or "right" in detected_signs:
+            rospy.loginfo("No left turn or right sign detected! Adjusting direction to the right.")
+            if cmd.angular.z <= 0:
+                cmd.angular.z = 0.2  
+
+        elif "no_right" in detected_signs:
+            rospy.loginfo("No right turn sign detected! Adjusting direction to the left.")
+            if cmd.angular.z >= 0:
+                cmd.angular.z = -0.2 
+
+        else:
+            rospy.loginfo("No special sign detected, continuing at normal speed.")
+            cmd.linear.x = 1.0  
+
+        self.cmd_pub.publish(cmd)
+
 
 if __name__ == '__main__':
     try:
