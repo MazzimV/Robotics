@@ -2,7 +2,7 @@
 <launch>
   <node pkg="controller" type="controller.py" name="controller" output="screen">
   </node> 
-  <node pkg="sign_detection" type="sign_detection.py" name="sign_detection">
+  <node pkg="traffic_detection" type="traffic_detection.py" name="traffic_detection">
   </node>   
   <node pkg="obj_distance_estimator" type="obj_distance_estimator.py" name="obj_distance_estimator">
   </node>
