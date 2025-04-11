@@ -59,10 +59,10 @@ class PedestrianDetection:
             height, width, _ = image.shape
             
             # Define region of interest
-            roi_top = int(height * 0.25)
-            roi_bottom = int(height)
-            roi_width = int(width)
-            roi_left = int(0)
+            roi_top = int(height * 0.6)
+            roi_bottom = int(height * 0.8)
+            roi_width = int(width * 0.5)
+            roi_left = int(width * 0.25)
             roi_right = int(roi_left + roi_width)
 
             # Extract ROI
@@ -81,7 +81,7 @@ class PedestrianDetection:
             white_pixel_count = np.sum(white_mask > 0)
             cv2.putText(debug_image, f"White pixels: {white_pixel_count}", 
                       (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-            if white_pixel_count < 10000:
+            if white_pixel_count < 4000:
                 return False, debug_image
             
             # Apply morphological operations to clean up the mask
