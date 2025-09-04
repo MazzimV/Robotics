@@ -54,11 +54,16 @@ class sign_detection():
 
             final_label = None
 
+            score  = -1
             for result in results:
                 for box in result.boxes:
                     confidence = float(box.conf[0].item())  # Extract confidence score
-                    if confidence >= 0.80:  # Confidence threshold check
-                        label = self.model.names[int(box.cls[0].item())]  # Get label
+                    label = self.model.names[int(box.cls[0].item())]
+                    if label == "red_light" or label == "green_light" or label == "yellow_light":
+                        if score < confidence:
+                            score = confidence
+                            final_label = label
+                    elif confidence >= 0.80: 
 
                         x1, y1, x2, y2 = box.xyxy[0] 
                         x1, y1, x2, y2 = float(x1), float(y1), float(x2), float(y2)

@@ -18,8 +18,8 @@ import ros_numpy
 from sensor_msgs.msg import PointCloud2
 from std_msgs.msg import Bool
 
-LASER_DIST_THRESHOLD = 0.40 
-DEPTH_DIST_THRESHOLD = 0.50 
+LASER_DIST_THRESHOLD = 0.30 
+DEPTH_DIST_THRESHOLD = 0.30 
 
 class obj_dist_est():
 

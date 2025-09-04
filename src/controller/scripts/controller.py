@@ -17,6 +17,8 @@ class Controller:
         self.stop_duration = rospy.Duration(3.0)
         self.min_speed = 0.2
         self.max_speed = 0.4
+        self.min_ang_speed = 0.6
+        self.max_ang_speed = 1.2
         self.speed_limit = self.max_speed
 
         self.object_detected = False
@@ -70,13 +72,13 @@ class Controller:
                 rospy.loginfo("Stop sign detected")
                 self.stop_detected = True
                 self.stop_block_end_timer = rospy.Time.now() + self.stop_duration
-                cmd = Twist()
-                self.cmd_vel_pub.publish(cmd)
+                # cmd = Twist()
+                # self.cmd_vel_pub.publish(cmd)
             elif sign == "red_light":
                 rospy.loginfo("Red light detected")
                 self.traffic_light_state = "red"
-                cmd = Twist()
-                self.cmd_vel_pub.publish(cmd)
+                # cmd = Twist()
+                # self.cmd_vel_pub.publish(cmd)
             elif sign == "yellow_light":
                 rospy.loginfo("Yellow light detected")
                 self.traffic_light_state = "yellow"
@@ -131,7 +133,7 @@ class Controller:
             rospy.loginfo("Stopped at a stop sign")
             return
         
-        cmd = self.apply_traffic_rules(msg)
+        cmd = self.apply_traffic_sign_rules(msg)
         
         if self.pedestrian_detected:
             self.cmd_vel_pub.publish(cmd)
@@ -151,9 +153,9 @@ class Controller:
         if self.traffic_light_state == "red" and cmd.linear.x > 0:
             cmd.linear.x = 0.0
         elif self.traffic_light_state == "yellow" and cmd.linear.x > 0:
-            cmd.linear.x *= 0.5  # Reduce speed by half for yellow light
+            cmd.linear.x = self.speed_limit / 2  # Reduce speed by half for yellow light
         
-        # Apply turn restrictions
+        # # Apply turn restrictions
         if not self.turn_restrictions["left_allowed"] and cmd.angular.z > 0:
             cmd.angular.z = 0.0  # Block left turns
         
@@ -165,7 +167,6 @@ class Controller:
                 cmd.angular.z = -0.2  # Force slight right turn
                 if cmd.linear.x > 0.3:
                     cmd.linear.x = 0.3  # Reduce speed for right turn
-        
         return cmd
         
     def run(self):

@@ -1,5 +1,11 @@
 <?xml version="1.0"?>
 <launch>
   <node pkg="controller" type="controller.py" name="controller" output="screen">
+  </node> 
+  <node pkg="traffic_detection" type="traffic_detection.py" name="traffic_detection">
+  </node>   
+  <node pkg="obj_distance_estimator" type="obj_distance_estimator.py" name="obj_distance_estimator">
+  </node>
+  <node pkg="pedestrian_detection" type="pedestrian_detection.py" name="pedestrian_detection">
   </node>  
 </launch>
